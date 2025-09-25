@@ -4,9 +4,11 @@ import bcrypt from "bcryptjs";
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
+  const normalizedFullName = fullName?.trim();
+  const normalizedEmail = email?.trim().toLowerCase();
 
   try {
-    if (!fullName || !email || !password) {
+    if (!normalizedFullName || !normalizedEmail || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -17,11 +19,11 @@ export const signup = async (req, res) => {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
     if (user) {
       return res.status(400).json({ message: "Email already in use" });
     }
@@ -30,14 +32,15 @@ export const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = new User({
-      fullName,
-      email,
+      fullName: normalizedFullName,
+      email: normalizedEmail,
       password: hashedPassword,
     });
 
     if (newUser) {
-      generateToken(newUser._id, res);
       await newUser.save();
+      generateToken(newUser._id, res);
+
       res.status(201).json({
         _id: newUser._id,
         fullName: newUser.fullName,

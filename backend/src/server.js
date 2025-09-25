@@ -26,7 +26,14 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.listen(PORT, () => {
-  console.log("Server is running on port:", PORT);
-  connectDB();
-});
+(async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log("Server is running on port:", PORT);
+    });
+  } catch (error) {
+    console.error("Failed to initialize the database connection:", error);
+    process.exit(1);
+  }
+})();
